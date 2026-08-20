@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Open Loops">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%2317191b'/%3E%3Crect x='8' y='8' width='84' height='84' fill='none' stroke='%23ff6a1a' stroke-width='4'/%3E%3Ctext x='50' y='62' font-family='Arial' font-weight='bold' font-size='44' fill='%23ff6a1a' text-anchor='middle'%3EOL%3C/text%3E%3C/svg%3E">
+<title>Open Loops</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Archivo+Condensed:wght@600;700&display=swap');
+
+  :root{
+    --bg: #17191b;
+    --panel: #212427;
+    --panel-raised: #2a2d31;
+    --line: #3a3e42;
+    --text: #e9e5d8;
+    --text-dim: #93938c;
+    --orange: #ff6a1a;
+    --orange-dim: #7a3a17;
+    --green: #5c8a5c;
+    --amber: #c9982f;
+    --red: #b5493f;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 1px 1px, #ffffff08 1px, transparent 0) 0 0/22px 22px,
+      var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Mono', monospace;
+    min-height:100vh;
+    padding:24px 16px 60px;
+  }
+
+  header{
+    max-width:1100px;
+    margin:0 auto 28px;
+    border-bottom:2px solid var(--line);
+    padding-bottom:16px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  h1{
+    font-family:'Archivo Condensed', sans-serif;
+    font-weight:700;
+    font-size:34px;
+    letter-spacing:0.5px;
+    margin:0;
+    text-transform:uppercase;
+    color:var(--text);
+  }
+  h1 span{color:var(--orange);}
+  .sub{color:var(--text-dim); font-size:12px; letter-spacing:1px; text-transform:uppercase; margin-top:4px;}
+  .stamp{
+    font-size:11px;
+    color:var(--text-dim);
+    border:1px solid var(--line);
+    padding:4px 10px;
+    border-radius:2px;
+    letter-spacing:1px;
+  }
+
+  main{max-width:1100px; margin:0 auto;}
+
+  .addbar{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    background:var(--panel);
+    border:1px solid var(--line);
+    padding:14px;
+    margin-bottom:26px;
+    border-radius:3px;
+  }
+  .addbar input, .addbar select{
+    background:var(--panel-raised);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-family:inherit;
+    font-size:13px;
+    padding:9px 10px;
+    border-radius:2px;
+  }
+  .addbar input[name="title"]{flex:2; min-width:180px;}
+  .addbar input[name="next"]{flex:2; min-width:180px;}
+  .addbar select{flex:1; min-width:140px;}
+  .addbar button{
+    background:var(--orange);
+    border:none;
+    color:#1a1a1a;
+    font-family:'Archivo Condensed', sans-serif;
+    font-weight:700;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    font-size:13px;
+    padding:9px 18px;
+    border-radius:2px;
+    cursor:pointer;
+  }
+  .addbar button:hover{background:#ff7f3d;}
+
+  .board{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:18px;
+  }
+  @media (max-width:1000px){ .board{grid-template-columns:repeat(2, 1fr);} }
+  @media (max-width:560px){ .board{grid-template-columns:1fr;} }
+
+  .col{min-height:60px;}
+  .col-head{
+    font-family:'Archivo Condensed', sans-serif;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    font-size:14px;
+    padding-bottom:8px;
+    margin-bottom:12px;
+    border-bottom:2px solid;
+    display:flex;
+    justify-content:space-between;
+  }
+  .col-head .count{
+    font-family:'IBM Plex Mono';
+    font-weight:400;
+    font-size:12px;
+    color:var(--text-dim);
+  }
+  .col[data-status="active"] .col-head{color:var(--orange); border-color:var(--orange-dim);}
+  .col[data-status="waiting"] .col-head{color:var(--amber); border-color:#5c451c;}
+  .col[data-status="stalled"] .col-head{color:var(--red); border-color:#5c2a24;}
+  .col[data-status="done"] .col-head{color:var(--green); border-color:#2f4a2f;}
+
+  .ticket{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-left:3px solid var(--orange);
+    border-radius:2px;
+    padding:12px 12px 10px;
+    margin-bottom:10px;
+    position:relative;
+  }
+  .col[data-status="waiting"] .ticket{border-left-color:var(--amber);}
+  .col[data-status="stalled"] .ticket{border-left-color:var(--red);}
+  .col[data-status="done"] .ticket{border-left-color:var(--green); opacity:0.88;}
+  .col[data-status="done"] .ticket .title{color:var(--green);}
+
+  .ticket .tag{
+    font-size:10px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    display:flex;
+    justify-content:space-between;
+    margin-bottom:6px;
+  }
+  .ticket .title{font-size:14px; font-weight:600; margin-bottom:6px; line-height:1.3;}
+  .ticket .next{font-size:12px; color:var(--text-dim); line-height:1.4;}
+  .ticket .next b{color:var(--text); font-weight:600;}
+  .ticket .row{
+    display:flex;
+    gap:6px;
+    margin-top:10px;
+    align-items:center;
+  }
+  .ticket select{
+    background:var(--panel-raised);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-family:inherit;
+    font-size:11px;
+    padding:4px 6px;
+    border-radius:2px;
+    flex:1;
+  }
+  .ticket .actions{
+    display:flex;
+    gap:6px;
+    margin-top:6px;
+  }
+  .ticket button.icon{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    font-size:11px;
+    padding:4px 8px;
+    border-radius:2px;
+    cursor:pointer;
+    flex:1;
+  }
+  .ticket button.icon:hover{color:var(--text); border-color:var(--text-dim);}
+  .ticket button.del{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    font-size:11px;
+    padding:4px 8px;
+    border-radius:2px;
+    cursor:pointer;
+    flex:1;
+  }
+  .ticket button.del:hover{color:var(--red); border-color:var(--red);}
+  .ticket button.save{
+    background:var(--orange);
+    border:none;
+    color:#1a1a1a;
+    font-weight:600;
+  }
+  .ticket button.save:hover{background:#ff7f3d;}
+
+  .ticket-edit input, .ticket-edit select{
+    width:100%;
+    background:var(--panel-raised);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-family:inherit;
+    font-size:12px;
+    padding:6px 8px;
+    border-radius:2px;
+    margin-bottom:6px;
+  }
+  .ticket-edit label{
+    font-size:9px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    display:block;
+    margin-bottom:2px;
+  }
+
+  .empty{
+    color:var(--text-dim);
+    font-size:12px;
+    padding:14px;
+    border:1px dashed var(--line);
+    border-radius:2px;
+    text-align:center;
+  }
+
+  .loading{text-align:center; color:var(--text-dim); padding:40px; font-size:13px;}
+
+  .trash{
+    max-width:1100px;
+    margin:34px auto 0;
+    border-top:1px solid var(--line);
+    padding-top:16px;
+  }
+  .trash-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    cursor:pointer;
+    user-select:none;
+  }
+  .trash-head .label{
+    font-family:'Archivo Condensed', sans-serif;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    font-size:13px;
+    color:var(--text-dim);
+  }
+  .trash-head .purge{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    font-size:11px;
+    padding:4px 10px;
+    border-radius:2px;
+    cursor:pointer;
+  }
+  .trash-head .purge:hover{color:var(--red); border-color:var(--red);}
+  .trash-list{margin-top:10px; display:none; flex-direction:column; gap:6px;}
+  .trash-list.open{display:flex;}
+  .trash-item{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:2px;
+    padding:8px 12px;
+    font-size:12px;
+    color:var(--text-dim);
+  }
+  .trash-item span.t{color:var(--text);}
+  .trash-item button{
+    background:transparent;
+    border:1px solid var(--orange-dim);
+    color:var(--orange);
+    font-size:11px;
+    padding:4px 10px;
+    border-radius:2px;
+    cursor:pointer;
+  }
+  .trash-item button:hover{background:var(--orange); color:#1a1a1a;}
+  .trash-empty{font-size:12px; color:var(--text-dim); padding:8px 0;}
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Open <span>Loops</span></h1>
+    <div class="sub">Quinn / QuinnEssential — every active thread, one board</div>
+  </div>
+  <div class="stamp" id="dateStamp"></div>
+</header>
+
+<main>
+  <div class="addbar">
+    <input type="text" name="title" placeholder="What's the thread? (e.g. Pinguicula mother cabinet)">
+    <select name="category">
+      <option value="Business">Business</option>
+      <option value="Career/Certs">Career/Certs</option>
+      <option value="Botanical">Botanical</option>
+      <option value="Trades/Creative">Trades/Creative</option>
+      <option value="Personal/Systems">Personal/Systems</option>
+    </select>
+    <select name="status">
+      <option value="active">Active</option>
+      <option value="waiting">Waiting</option>
+      <option value="stalled">Stalled</option>
+      <option value="done">Completed</option>
+    </select>
+    <input type="text" name="next" placeholder="Next action (one concrete step)">
+    <button onclick="addTicket()">Add to board</button>
+  </div>
+
+  <div class="board" id="board">
+    <div class="loading">loading board…</div>
+  </div>
+
+  <div class="trash">
+    <div class="trash-head" onclick="toggleTrash()">
+      <span class="label">Recently cleared <span id="trashCount" class="count"></span></span>
+      <button class="purge" onclick="event.stopPropagation(); purgeAll()">Purge all</button>
+    </div>
+    <div class="trash-list" id="trashList"></div>
+  </div>
+</main>
+
+<script>
+const STORAGE_KEY = 'open-loops-v2';
+let tickets = [];
+let trash = [];
+let trashOpen = false;
+let editingId = null;
+
+document.getElementById('dateStamp').textContent = new Date().toLocaleDateString('en-US', {weekday:'short', month:'short', day:'numeric', year:'numeric'});
+
+async function loadTickets(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      tickets = parsed.tickets || [];
+      trash = parsed.trash || [];
+    }else{
+      const oldRaw = localStorage.getItem('open-loops-v1');
+      tickets = oldRaw ? JSON.parse(oldRaw) : [];
+      trash = [];
+      if(oldRaw) saveTickets();
+    }
+  }catch(e){
+    tickets = [];
+    trash = [];
+  }
+  render();
+}
+
+async function saveTickets(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ tickets, trash }));
+  }catch(e){
+    console.error('save failed', e);
+  }
+}
+
+function addTicket(){
+  const titleEl = document.querySelector('input[name="title"]');
+  const nextEl = document.querySelector('input[name="next"]');
+  const catEl = document.querySelector('select[name="category"]');
+  const statusEl = document.querySelector('select[name="status"]');
+
+  const title = titleEl.value.trim();
+  if(!title) return;
+
+  tickets.unshift({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    title,
+    category: catEl.value,
+    status: statusEl.value,
+    next: nextEl.value.trim(),
+    updated: new Date().toISOString()
+  });
+
+  titleEl.value = '';
+  nextEl.value = '';
+  saveTickets();
+  render();
+}
+
+function updateStatus(id, newStatus){
+  const t = tickets.find(x => x.id === id);
+  if(t){ t.status = newStatus; t.updated = new Date().toISOString(); }
+  saveTickets();
+  render();
+}
+
+function deleteTicket(id){
+  const t = tickets.find(x => x.id === id);
+  if(t){
+    trash.unshift({ ...t, clearedAt: new Date().toISOString() });
+    tickets = tickets.filter(x => x.id !== id);
+  }
+  saveTickets();
+  render();
+}
+
+function restoreTicket(id){
+  const t = trash.find(x => x.id === id);
+  if(t){
+    const { clearedAt, ...clean } = t;
+    tickets.unshift(clean);
+    trash = trash.filter(x => x.id !== id);
+  }
+  saveTickets();
+  render();
+}
+
+function purgeOne(id){
+  trash = trash.filter(x => x.id !== id);
+  saveTickets();
+  render();
+}
+
+function purgeAll(){
+  if(trash.length === 0) return;
+  if(!confirm(`Permanently delete ${trash.length} cleared item${trash.length===1?'':'s'}? This can't be undone.`)) return;
+  trash = [];
+  saveTickets();
+  render();
+}
+
+function startEdit(id){
+  editingId = id;
+  render();
+}
+
+function cancelEdit(){
+  editingId = null;
+  render();
+}
+
+function saveEdit(id){
+  const t = tickets.find(x => x.id === id);
+  if(t){
+    const titleEl = document.getElementById('edit-title-' + id);
+    const catEl = document.getElementById('edit-cat-' + id);
+    const nextEl = document.getElementById('edit-next-' + id);
+    const title = titleEl.value.trim();
+    if(!title) return;
+    t.title = title;
+    t.category = catEl.value;
+    t.next = nextEl.value.trim();
+    t.updated = new Date().toISOString();
+  }
+  editingId = null;
+  saveTickets();
+  render();
+}
+
+function cloneTicket(id){
+  const t = tickets.find(x => x.id === id);
+  if(!t) return;
+  const newId = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  tickets.unshift({
+    id: newId,
+    title: t.title,
+    category: t.category,
+    status: 'active',
+    next: '',
+    updated: new Date().toISOString()
+  });
+  editingId = newId;
+  saveTickets();
+  render();
+}
+
+function daysAgo(iso){
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if(d === 0) return 'today';
+  if(d === 1) return '1d ago';
+  return d + 'd ago';
+}
+
+function render(){
+  const board = document.getElementById('board');
+  const statuses = [
+    {key:'active', label:'Active'},
+    {key:'waiting', label:'Waiting'},
+    {key:'stalled', label:'Stalled'},
+    {key:'done', label:'Completed'}
+  ];
+
+  const categories = ['Business','Career/Certs','Botanical','Trades/Creative','Personal/Systems'];
+
+  board.innerHTML = statuses.map(s => {
+    const items = tickets.filter(t => t.status === s.key);
+    const cards = items.length ? items.map(t => {
+      if(editingId === t.id){
+        return `
+      <div class="ticket ticket-edit">
+        <label>Title</label>
+        <input id="edit-title-${t.id}" type="text" value="${escapeAttr(t.title)}">
+        <label>Category</label>
+        <select id="edit-cat-${t.id}">
+          ${categories.map(c => `<option value="${c}" ${c===t.category?'selected':''}>${c}</option>`).join('')}
+        </select>
+        <label>Next action</label>
+        <input id="edit-next-${t.id}" type="text" value="${escapeAttr(t.next || '')}" placeholder="Next concrete step">
+        <div class="actions">
+          <button class="icon save" onclick="saveEdit('${t.id}')">Save</button>
+          <button class="icon" onclick="cancelEdit()">Cancel</button>
+        </div>
+      </div>`;
+      }
+      return `
+      <div class="ticket">
+        <div class="tag"><span>${t.category}</span><span>${daysAgo(t.updated)}</span></div>
+        <div class="title">${escapeHtml(t.title)}</div>
+        ${t.next ? `<div class="next"><b>${t.status==='done' ? 'Landed:' : 'Next:'}</b> ${escapeHtml(t.next)}</div>` : ''}
+        <div class="row">
+          <select onchange="updateStatus('${t.id}', this.value)">
+            <option value="active" ${t.status==='active'?'selected':''}>Active</option>
+            <option value="waiting" ${t.status==='waiting'?'selected':''}>Waiting</option>
+            <option value="stalled" ${t.status==='stalled'?'selected':''}>Stalled</option>
+            <option value="done" ${t.status==='done'?'selected':''}>Completed</option>
+          </select>
+        </div>
+        <div class="actions">
+          <button class="icon" onclick="startEdit('${t.id}')">Edit</button>
+          <button class="icon" onclick="cloneTicket('${t.id}')">Clone</button>
+          <button class="del" onclick="deleteTicket('${t.id}')">Clear</button>
+        </div>
+      </div>`;
+    }).join('') : `<div class="empty">nothing here</div>`;
+
+    return `
+      <div class="col" data-status="${s.key}">
+        <div class="col-head">${s.label} <span class="count">${items.length}</span></div>
+        ${cards}
+      </div>
+    `;
+  }).join('');
+
+  const trashCountEl = document.getElementById('trashCount');
+  trashCountEl.textContent = trash.length ? `(${trash.length})` : '';
+
+  const trashListEl = document.getElementById('trashList');
+  trashListEl.className = 'trash-list' + (trashOpen ? ' open' : '');
+  trashListEl.innerHTML = trash.length ? trash.map(t => `
+    <div class="trash-item">
+      <span><span class="t">${escapeHtml(t.title)}</span> — cleared ${daysAgo(t.clearedAt)}</span>
+      <span style="display:flex; gap:6px;">
+        <button onclick="restoreTicket('${t.id}')">Restore</button>
+        <button onclick="purgeOne('${t.id}')" style="border-color:var(--line); color:var(--text-dim);">Purge</button>
+      </span>
+    </div>
+  `).join('') : `<div class="trash-empty">nothing cleared</div>`;
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function escapeAttr(str){
+  return String(str).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Enter' && document.activeElement.name === 'title'){
+    addTicket();
+  }
+});
+
+loadTickets();
+</script>
+
+</body>
+</html>
